@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import os
+import altair as alt
 
 # Load employee data
 @st.cache_data
@@ -22,8 +23,8 @@ def load_data():
 data = load_data()
 employee_df = load_employee_data()
 
-st.set_page_config(page_title="WaieFYP Disaster Support App", layout="wide")
-st.title("🖘 WAIE Disaster Emergency Support System")
+st.set_page_config(page_title="Tetron Disaster Support App", layout="wide")
+st.title("🖘 Tetron Disaster Emergency Support System")
 
 menu = st.sidebar.selectbox("Select Role", ["Employee", "Admin"])
 
@@ -107,3 +108,48 @@ if menu == "Admin":
     st.markdown("---")
     st.subheader("📊 Summary Report")
     st.write(data['Request Status'].value_counts())
+
+    # Additional Reporting
+    st.markdown("---")
+    st.subheader("📦 Stock Request Overview")
+    supply_counts = data['Supplies Needed'].str.get_dummies(sep=", ").sum().sort_values(ascending=False)
+    st.bar_chart(supply_counts)
+
+    st.subheader("💰 Budget Estimation")
+    unit_cost = {
+        "Food": 10,
+        "Water": 5,
+        "Baby Supplies": 15,
+        "Hygiene Kit": 12,
+        "Medical Kit": 20,
+        "Blanket": 8
+    }
+
+    total_cost = 0
+    supply_cost_data = []
+
+    for item, count in supply_counts.items():
+        cost = count * unit_cost.get(item, 0)
+        total_cost += cost
+        supply_cost_data.append({"Item": item, "Quantity": count, "Total Cost (MYR)": cost})
+
+    cost_df = pd.DataFrame(supply_cost_data)
+    st.dataframe(cost_df)
+
+    st.metric("Estimated Total Budget Needed (MYR)", f"RM {total_cost:.2f}")
+
+    st.subheader("📈 Delivery Status Report")
+    delivery_chart = alt.Chart(data).mark_bar().encode(
+        x=alt.X('Request Status:N', title='Request Status'),
+        y=alt.Y('count():Q', title='Number of Requests'),
+        color='Request Status:N'
+    ).properties(
+        width=600,
+        height=400
+    )
+    st.altair_chart(delivery_chart)
+
+    st.subheader("📅 Requests Over Time")
+    data['Timestamp'] = pd.to_datetime(data['Timestamp'], errors='coerce')
+    daily_requests = data.groupby(data['Timestamp'].dt.date).size().reset_index(name='Request Count')
+    st.line_chart(daily_requests.set_index('Timestamp'))
