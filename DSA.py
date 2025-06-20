@@ -20,14 +20,61 @@ def load_data():
             'Location', 'Status', 'Supplies Needed', 'Additional Notes', 'Request Status'
         ])
 
-# Load existing or initialize data
+# Load user credentials
+def load_users():
+    if os.path.exists("users.csv"):
+        return pd.read_csv("users.csv")
+    else:
+        return pd.DataFrame(columns=['Username', 'Password', 'Role'])
+
+# Authentication system
+def authenticate(username, password, users_df):
+    user = users_df[(users_df['Username'] == username) & (users_df['Password'] == password)]
+    if not user.empty:
+        return user.iloc[0]['Role']
+    return None
+
+# Notification sound on pending requests
+def play_notification_sound():
+    sound_html = """
+        <audio autoplay>
+            <source src="https://www.soundjay.com/buttons/sounds/beep-07.mp3" type="audio/mpeg">
+        </audio>
+    """
+    st.markdown(sound_html, unsafe_allow_html=True)
+
+# Load data
 data = load_data()
 employee_df = load_employee_data()
+users_df = load_users()
 
 st.set_page_config(page_title="Tetron Disaster Support App", layout="wide")
 st.title("🖘 Tetron Disaster Emergency Support System")
 
-menu = st.sidebar.selectbox("Select Role", ["Employee", "Admin"])
+# Session state login
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+    st.session_state.username = ""
+    st.session_state.role = ""
+
+if not st.session_state.logged_in:
+    st.sidebar.header("🔐 Login")
+    username = st.sidebar.text_input("Username")
+    password = st.sidebar.text_input("Password", type="password")
+    if st.sidebar.button("Login"):
+        role = authenticate(username, password, users_df)
+        if role:
+            st.session_state.logged_in = True
+            st.session_state.username = username
+            st.session_state.role = role
+            st.success(f"Welcome, {username} ({role})")
+        else:
+            st.error("Invalid username or password.")
+    st.stop()
+
+# Menu based on role
+role = st.session_state.role
+menu = st.sidebar.selectbox("Select Menu", ["Employee"] if role == "Employee" else ["Employee", "Admin"])
 
 # ------------------- EMPLOYEE INTERFACE -------------------
 if menu == "Employee":
@@ -91,6 +138,12 @@ if menu == "Admin":
 
     # Reload fresh data without cache
     data = load_data()
+
+    # 🔔 Alert for new pending requests
+    pending_count = data[data['Request Status'] == "Pending"].shape[0]
+    if pending_count > 0:
+        st.warning(f"🚨 There are {pending_count} new pending request(s) that need attention!")
+        play_notification_sound()
 
     if data.empty:
         st.warning("No requests submitted yet.")
