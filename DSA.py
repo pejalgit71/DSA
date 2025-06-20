@@ -4,6 +4,7 @@ from datetime import datetime
 import os
 import altair as alt
 import plotly.express as px
+import base64
 
 # Load employee data
 @st.cache_data
