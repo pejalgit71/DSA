@@ -38,7 +38,7 @@ def authenticate(username, password, users_df):
 def play_notification_sound():
     sound_html = """
         <audio autoplay>
-             <source src="chime-alert-demo-309545.mp3" type="audio/mpeg">
+              <source src="chime-alert-demo-309545.mp3" type="audio/mpeg">
         </audio>
     """
     st.markdown(sound_html, unsafe_allow_html=True)
