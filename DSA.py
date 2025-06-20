@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime
 import os
 import altair as alt
+import plotly.express as px
 
 # Load employee data
 @st.cache_data
@@ -151,5 +152,19 @@ if menu == "Admin":
 
     st.subheader("📅 Requests Over Time")
     data['Timestamp'] = pd.to_datetime(data['Timestamp'], errors='coerce')
-    daily_requests = data.groupby(data['Timestamp'].dt.date).size().reset_index(name='Request Count')
-    st.line_chart(daily_requests.set_index('Timestamp'))
+    daily_requests = data.dropna(subset=['Timestamp']).groupby(data['Timestamp'].dt.date).size().reset_index(name='Request Count')
+    daily_requests = daily_requests.rename(columns={daily_requests.columns[0]: 'Date'})
+    if not daily_requests.empty:
+        st.line_chart(daily_requests.set_index('Date'))
+    else:
+        st.info("No valid timestamp entries available for request trend analysis.")
+
+    st.subheader("🧊 3D Interactive Chart: Supplies vs Status")
+    if not data.empty:
+        plot_data = data.copy()
+        plot_data['Supplies Needed'] = plot_data['Supplies Needed'].fillna('None')
+        fig = px.scatter_3d(plot_data, x='Status', y='Supplies Needed', z='Request Status',
+                            color='Status', symbol='Request Status')
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("Not enough data to display 3D chart.")
