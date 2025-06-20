@@ -36,12 +36,17 @@ def authenticate(username, password, users_df):
 
 # Notification sound on pending requests
 def play_notification_sound():
-    sound_html = """
-        <audio autoplay>
-              <source src="chime-alert-demo-309545.mp3" type="audio/mpeg">
-        </audio>
-    """
-    st.markdown(sound_html, unsafe_allow_html=True)
+    file_path = "chime-alert-demo-309545.mp3"
+    if os.path.exists(file_path):
+        with open(file_path, "rb") as f:
+            data = f.read()
+            b64 = base64.b64encode(data).decode()
+            sound_html = f"""
+                <audio autoplay>
+                    <source src="data:audio/mp3;base64,{b64}" type="audio/mpeg">
+                </audio>
+            """
+            st.markdown(sound_html, unsafe_allow_html=True)
 
 # Load data
 data = load_data()
