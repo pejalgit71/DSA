@@ -22,7 +22,7 @@ def load_data():
 data = load_data()
 employee_df = load_employee_data()
 
-st.set_page_config(page_title="Tetron Disaster Support App", layout="wide")
+st.set_page_config(page_title="Waie Disaster Support App", layout="wide")
 st.title("🖘 Tetron Disaster Emergency Support System")
 
 menu = st.sidebar.selectbox("Select Role", ["Employee", "Admin"])
